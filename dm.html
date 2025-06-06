@@ -217,11 +217,11 @@
             box-shadow: 0 6px 15px rgba(46, 204, 113, 0.35);
         }
         
-        .btn-pause {
+        .btn-stop {
             background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
         }
         
-        .btn-pause:hover:not(:disabled) {
+        .btn-stop:hover:not(:disabled) {
             transform: translateY(-3px);
             box-shadow: 0 6px 15px rgba(243, 156, 18, 0.35);
         }
@@ -425,11 +425,8 @@
         </div>
         
         <div class="controls">
-            <button class="btn btn-start" id="startBtn" disabled>
+            <button class="btn btn-start" id="toggleBtn" disabled>
                 <i class="fas fa-play"></i> 开始
-            </button>
-            <button class="btn btn-pause" id="pauseBtn" disabled>
-                <i class="fas fa-pause"></i> 暂停
             </button>
             <button class="btn btn-reset" id="resetBtn" disabled>
                 <i class="fas fa-redo"></i> 重置
@@ -471,8 +468,7 @@
             const fileInput = document.getElementById('fileInput');
             const fileInfo = document.getElementById('fileInfo');
             const nameDisplay = document.getElementById('nameDisplay');
-            const startBtn = document.getElementById('startBtn');
-            const pauseBtn = document.getElementById('pauseBtn');
+            const toggleBtn = document.getElementById('toggleBtn');
             const resetBtn = document.getElementById('resetBtn');
             const studentsCount = document.getElementById('studentsCount');
             const calledCount = document.getElementById('calledCount');
@@ -484,6 +480,7 @@
             let interval;
             let isRunning = false;
             let selectedStudents = new Set();
+            let speed = 100; // 初始速度
             
             // 模拟学生数据（在没有上传文件时使用）
             function loadSampleData() {
@@ -501,7 +498,7 @@
                 studentsCount.textContent = students.length;
                 calledCount.textContent = "0";
                 remainingCount.textContent = students.length;
-                startBtn.disabled = false;
+                toggleBtn.disabled = false;
                 resetBtn.disabled = false;
                 
                 updateStudentsGrid();
@@ -544,7 +541,7 @@
                             studentsCount.textContent = students.length;
                             calledCount.textContent = "0";
                             remainingCount.textContent = students.length;
-                            startBtn.disabled = false;
+                            toggleBtn.disabled = false;
                             resetBtn.disabled = false;
                             
                             // 更新学生名单显示
@@ -608,13 +605,17 @@
                 return students[randomIndex];
             }
             
-            // 开始点名
-            startBtn.addEventListener('click', function() {
+            // 开始/暂停点名
+            toggleBtn.addEventListener('click', function() {
                 if (students.length === 0) return;
                 
                 if (!isRunning) {
+                    // 开始点名
                     isRunning = true;
                     nameDisplay.classList.add('flashing');
+                    toggleBtn.innerHTML = '<i class="fas fa-pause"></i> 暂停';
+                    toggleBtn.classList.remove('btn-start');
+                    toggleBtn.classList.add('btn-stop');
                     
                     interval = setInterval(() => {
                         const student = getRandomStudent();
@@ -628,40 +629,17 @@
                         const selectedEl = document.querySelector(`.student-item[data-index="${currentIndex}"]`);
                         if (selectedEl) {
                             selectedEl.classList.add('selected');
-                            selectedEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            // 移除了 scrollIntoView 方法，不再自动滚动
                         }
-                    }, 100);
-                    
-                    pauseBtn.disabled = false;
-                    startBtn.innerHTML = '<i class="fas fa-sync"></i> 加速';
+                    }, speed);
                 } else {
-                    // 加速功能
-                    clearInterval(interval);
-                    interval = setInterval(() => {
-                        const student = getRandomStudent();
-                        nameDisplay.querySelector('span').textContent = student;
-                        
-                        // 更新选中状态
-                        document.querySelectorAll('.student-item').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        
-                        const selectedEl = document.querySelector(`.student-item[data-index="${currentIndex}"]`);
-                        if (selectedEl) {
-                            selectedEl.classList.add('selected');
-                        }
-                    }, 50);
-                    
-                    startBtn.innerHTML = '<i class="fas fa-tachometer-alt"></i> 极速';
-                }
-            });
-            
-            // 暂停点名
-            pauseBtn.addEventListener('click', function() {
-                if (isRunning) {
+                    // 暂停点名
                     clearInterval(interval);
                     isRunning = false;
                     nameDisplay.classList.remove('flashing');
+                    toggleBtn.innerHTML = '<i class="fas fa-play"></i> 开始';
+                    toggleBtn.classList.remove('btn-stop');
+                    toggleBtn.classList.add('btn-start');
                     
                     // 标记已点名学生
                     if (currentIndex !== -1) {
@@ -671,10 +649,34 @@
                         updateStudentsGrid();
                         updateStats();
                     }
-                    
-                    pauseBtn.disabled = true;
-                    startBtn.innerHTML = '<i class="fas fa-play"></i> 继续';
                 }
+            });
+            
+            // 双击加速功能
+            toggleBtn.addEventListener('dblclick', function() {
+                if (!isRunning) return;
+                
+                clearInterval(interval);
+                speed = speed === 100 ? 50 : 30; // 切换速度
+                
+                interval = setInterval(() => {
+                    const student = getRandomStudent();
+                    nameDisplay.querySelector('span').textContent = student;
+                    
+                    // 更新选中状态
+                    document.querySelectorAll('.student-item').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    
+                    const selectedEl = document.querySelector(`.student-item[data-index="${currentIndex}"]`);
+                    if (selectedEl) {
+                        selectedEl.classList.add('selected');
+                    }
+                }, speed);
+                
+                // 显示当前速度
+                const speedText = speed === 100 ? '正常' : speed === 50 ? '快速' : '极速';
+                toggleBtn.innerHTML = `<i class="fas fa-pause"></i> 暂停 (${speedText})`;
             });
             
             // 重置点名
@@ -685,18 +687,17 @@
                 nameDisplay.querySelector('span').textContent = '准备点名';
                 currentIndex = -1;
                 selectedStudents.clear();
+                speed = 100;
                 
-                startBtn.disabled = students.length === 0;
-                pauseBtn.disabled = true;
-                startBtn.innerHTML = '<i class="fas fa-play"></i> 开始';
+                toggleBtn.disabled = students.length === 0;
+                toggleBtn.innerHTML = '<i class="fas fa-play"></i> 开始';
+                toggleBtn.classList.remove('btn-stop');
+                toggleBtn.classList.add('btn-start');
                 
                 // 更新学生名单显示和统计数据
                 updateStudentsGrid();
                 updateStats();
             });
-            
-            // 初始状态
-            pauseBtn.disabled = true;
         });
     </script>
 </body>
