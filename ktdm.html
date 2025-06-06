@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>课堂点名系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            width: 90%;
+            max-width: 900px;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #eaeff5;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin: 10px 0 30px;
+            font-size: 2.6rem;
+            font-weight: 700;
+            position: relative;
+        }
+        
+        h1 i {
+            color: #4b6cb7;
+            margin-right: 15px;
+        }
+        
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, #4b6cb7, #182848);
+            border-radius: 2px;
+        }
+        
+        .upload-section {
+            background: #f8fafd;
+            padding: 30px;
+            border-radius: 16px;
+            margin: 30px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border: 2px dashed #d1e0f0;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-section:hover {
+            border-color: #a0b9d9;
+            background: #f0f6ff;
+        }
+        
+        .section-title {
+            color: #3a5a8c;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+            color: white;
+            padding: 14px 36px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(75, 108, 183, 0.25);
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(75, 108, 183, 0.35);
+        }
+        
+        .file-info {
+            margin-top: 15px;
+            color: #5a7ab5;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        
+        .name-display {
+            background: linear-gradient(135deg, #3a5a8c 0%, #1e3a5f 100%);
+            border-radius: 16px;
+            padding: 50px 30px;
+            margin: 35px 0;
+            color: white;
+            font-size: 4rem;
+            font-weight: 700;
+            min-height: 220px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .name-display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, 
+                rgba(255,255,255,0.08) 0%,
+                rgba(255,255,255,0.03) 50%,
+                rgba(255,255,255,0.08) 100%);
+            z-index: 1;
+        }
+        
+        .name-display span {
+            position: relative;
+            z-index: 2;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 16px 42px;
+            font-size: 1.15rem;
+            border-radius: 8px;
+            border: none;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+        
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        }
+        
+        .btn-start:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(46, 204, 113, 0.35);
+        }
+        
+        .btn-pause {
+            background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
+        }
+        
+        .btn-pause:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(243, 156, 18, 0.35);
+        }
+        
+        .btn-reset {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+        
+        .btn-reset:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(231, 76, 60, 0.35);
+        }
+        
+        .info-panel {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #eaeff5;
+            min-width: 200px;
+            margin: 10px;
+        }
+        
+        .info-card i {
+            font-size: 2.2rem;
+            color: #4b6cb7;
+            margin-bottom: 15px;
+        }
+        
+        .info-card h3 {
+            color: #3a5a8c;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .info-card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        
+        .students-list {
+            margin-top: 30px;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8fafd;
+            border-radius: 16px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.03);
+            border: 1px solid #eaeff5;
+        }
+        
+        .students-list h3 {
+            margin-bottom: 18px;
+            color: #3a5a8c;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eaeff5;
+        }
+        
+        .students-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 14px;
+        }
+        
+        .student-item {
+            background: white;
+            padding: 12px 8px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            transition: all 0.2s ease;
+            font-weight: 500;
+            color: #2c3e50;
+            border: 1px solid #eaeff5;
+        }
+        
+        .student-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            border-color: #a0b9d9;
+        }
+        
+        .selected {
+            background: #e1f5e6 !important;
+            color: #27ae60;
+            font-weight: 700;
+            border: 2px solid #2ecc71;
+            box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+        }
+        
+        footer {
+            margin-top: 30px;
+            color: #7a8ca5;
+            font-size: 0.95rem;
+            padding-top: 20px;
+            border-top: 1px solid #eaeff5;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .name-display {
+                font-size: 3.2rem;
+                padding: 40px 20px;
+                min-height: 180px;
+            }
+            
+            .controls {
+                gap: 15px;
+            }
+            
+            .btn {
+                padding: 14px 30px;
+                font-size: 1.05rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 25px 20px;
+                width: 95%;
+            }
+            
+            h1 {
+                font-size: 1.9rem;
+            }
+            
+            .name-display {
+                font-size: 2.4rem;
+                min-height: 160px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .info-panel {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+        
+        .flashing {
+            animation: flash 0.15s infinite;
+        }
+        
+        @keyframes flash {
+            0% { opacity: 1; }
+            50% { opacity: 0.9; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-chalkboard-teacher"></i>课堂点名系统</h1>
+        
+        <div class="upload-section">
+            <h2 class="section-title"><i class="fas fa-file-excel"></i> 导入学生名单</h2>
+            <p>请上传Excel文件（.xlsx格式），第一列应为学生姓名</p>
+            
+            <div class="file-input-wrapper">
+                <div class="upload-btn">
+                    <i class="fas fa-cloud-upload-alt"></i> 选择Excel文件
+                </div>
+                <input type="file" id="fileInput" accept=".xlsx, .xls">
+            </div>
+            
+            <div class="file-info" id="fileInfo">
+                尚未选择文件
+            </div>
+        </div>
+        
+        <div class="name-display" id="nameDisplay">
+            <span>准备点名</span>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-start" id="startBtn" disabled>
+                <i class="fas fa-play"></i> 开始
+            </button>
+            <button class="btn btn-pause" id="pauseBtn" disabled>
+                <i class="fas fa-pause"></i> 暂停
+            </button>
+            <button class="btn btn-reset" id="resetBtn" disabled>
+                <i class="fas fa-redo"></i> 重置
+            </button>
+        </div>
+        
+        <div class="info-panel">
+            <div class="info-card">
+                <i class="fas fa-users"></i>
+                <h3>学生总数</h3>
+                <div class="value" id="studentsCount">0</div>
+            </div>
+            <div class="info-card">
+                <i class="fas fa-user-check"></i>
+                <h3>已点名学生</h3>
+                <div class="value" id="calledCount">0</div>
+            </div>
+            <div class="info-card">
+                <i class="fas fa-user-clock"></i>
+                <h3>未点名学生</h3>
+                <div class="value" id="remainingCount">0</div>
+            </div>
+        </div>
+        
+        <div class="students-list">
+            <h3><i class="fas fa-list"></i> 学生名单</h3>
+            <div class="students-grid" id="studentsGrid">
+                <!-- 学生名单将在这里动态生成 -->
+            </div>
+        </div>
+        
+        <footer>
+            <p>课堂点名系统 &copy; 2025 | 教育技术中心</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const fileInfo = document.getElementById('fileInfo');
+            const nameDisplay = document.getElementById('nameDisplay');
+            const startBtn = document.getElementById('startBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const studentsCount = document.getElementById('studentsCount');
+            const calledCount = document.getElementById('calledCount');
+            const remainingCount = document.getElementById('remainingCount');
+            const studentsGrid = document.getElementById('studentsGrid');
+            
+            let students = [];
+            let currentIndex = -1;
+            let interval;
+            let isRunning = false;
+            let selectedStudents = new Set();
+            
+            // 模拟学生数据（在没有上传文件时使用）
+            function loadSampleData() {
+                students = [
+                    "张三", "李四", "王五", "赵六", "钱七", "孙八", 
+                    "周九", "吴十", "郑十一", "王十二", "刘十三", "陈十四",
+                    "杨十五", "黄十六", "赵十七", "钱十八", "孙十九", "周二十"
+                ];
+                
+                studentsCount.textContent = students.length;
+                calledCount.textContent = "0";
+                remainingCount.textContent = students.length;
+                startBtn.disabled = false;
+                resetBtn.disabled = false;
+                
+                updateStudentsGrid();
+                fileInfo.innerHTML = `已加载示例名单 (${students.length}名学生) <i class="fas fa-info-circle"></i>`;
+                fileInfo.style.color = '#3498db';
+            }
+            
+            // 初始化加载示例数据
+            loadSampleData();
+            
+            // 处理文件上传
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                fileInfo.textContent = `已选择: ${file.name}`;
+                fileInfo.style.color = '#27ae60';
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        
+                        // 获取第一个工作表
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        
+                        // 将工作表转换为JSON
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                        
+                        // 提取第一列（假设第一行是标题）
+                        students = [];
+                        for (let i = 1; i < jsonData.length; i++) {
+                            if (jsonData[i][0]) {
+                                students.push(jsonData[i][0].toString().trim());
+                            }
+                        }
+                        
+                        if (students.length > 0) {
+                            studentsCount.textContent = students.length;
+                            calledCount.textContent = "0";
+                            remainingCount.textContent = students.length;
+                            startBtn.disabled = false;
+                            resetBtn.disabled = false;
+                            
+                            // 更新学生名单显示
+                            updateStudentsGrid();
+                            
+                            // 显示成功消息
+                            fileInfo.innerHTML = `成功导入 ${students.length} 名学生 <i class="fas fa-check-circle"></i>`;
+                        } else {
+                            fileInfo.innerHTML = `未找到有效学生名单 <i class="fas fa-exclamation-triangle"></i>`;
+                            fileInfo.style.color = '#e74c3c';
+                        }
+                    } catch (error) {
+                        console.error('Error parsing Excel file:', error);
+                        fileInfo.innerHTML = `文件解析错误: ${error.message} <i class="fas fa-exclamation-triangle"></i>`;
+                        fileInfo.style.color = '#e74c3c';
+                    }
+                };
+                
+                reader.readAsArrayBuffer(file);
+            });
+            
+            // 更新学生名单网格
+            function updateStudentsGrid() {
+                studentsGrid.innerHTML = '';
+                students.forEach((student, index) => {
+                    const studentEl = document.createElement('div');
+                    studentEl.className = 'student-item';
+                    studentEl.textContent = student;
+                    studentEl.dataset.index = index;
+                    
+                    if (selectedStudents.has(index)) {
+                        studentEl.classList.add('selected');
+                    }
+                    
+                    studentsGrid.appendChild(studentEl);
+                });
+            }
+            
+            // 更新统计数据
+            function updateStats() {
+                studentsCount.textContent = students.length;
+                calledCount.textContent = selectedStudents.size;
+                remainingCount.textContent = students.length - selectedStudents.size;
+            }
+            
+            // 随机选择学生
+            function getRandomStudent() {
+                if (students.length === 0) return null;
+                
+                // 如果所有学生都已被点到，则重置
+                if (selectedStudents.size >= students.length) {
+                    selectedStudents.clear();
+                }
+                
+                let randomIndex;
+                do {
+                    randomIndex = Math.floor(Math.random() * students.length);
+                } while (selectedStudents.has(randomIndex));
+                
+                currentIndex = randomIndex;
+                return students[randomIndex];
+            }
+            
+            // 开始点名
+            startBtn.addEventListener('click', function() {
+                if (students.length === 0) return;
+                
+                if (!isRunning) {
+                    isRunning = true;
+                    nameDisplay.classList.add('flashing');
+                    
+                    interval = setInterval(() => {
+                        const student = getRandomStudent();
+                        nameDisplay.querySelector('span').textContent = student;
+                        
+                        // 更新选中状态
+                        document.querySelectorAll('.student-item').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        
+                        const selectedEl = document.querySelector(`.student-item[data-index="${currentIndex}"]`);
+                        if (selectedEl) {
+                            selectedEl.classList.add('selected');
+                            selectedEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 100);
+                    
+                    pauseBtn.disabled = false;
+                    startBtn.innerHTML = '<i class="fas fa-sync"></i> 加速';
+                } else {
+                    // 加速功能
+                    clearInterval(interval);
+                    interval = setInterval(() => {
+                        const student = getRandomStudent();
+                        nameDisplay.querySelector('span').textContent = student;
+                        
+                        // 更新选中状态
+                        document.querySelectorAll('.student-item').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        
+                        const selectedEl = document.querySelector(`.student-item[data-index="${currentIndex}"]`);
+                        if (selectedEl) {
+                            selectedEl.classList.add('selected');
+                        }
+                    }, 50);
+                    
+                    startBtn.innerHTML = '<i class="fas fa-tachometer-alt"></i> 极速';
+                }
+            });
+            
+            // 暂停点名
+            pauseBtn.addEventListener('click', function() {
+                if (isRunning) {
+                    clearInterval(interval);
+                    isRunning = false;
+                    nameDisplay.classList.remove('flashing');
+                    
+                    // 标记已点名学生
+                    if (currentIndex !== -1) {
+                        selectedStudents.add(currentIndex);
+                        
+                        // 更新学生名单显示和统计数据
+                        updateStudentsGrid();
+                        updateStats();
+                    }
+                    
+                    pauseBtn.disabled = true;
+                    startBtn.innerHTML = '<i class="fas fa-play"></i> 继续';
+                }
+            });
+            
+            // 重置点名
+            resetBtn.addEventListener('click', function() {
+                clearInterval(interval);
+                isRunning = false;
+                nameDisplay.classList.remove('flashing');
+                nameDisplay.querySelector('span').textContent = '准备点名';
+                currentIndex = -1;
+                selectedStudents.clear();
+                
+                startBtn.disabled = students.length === 0;
+                pauseBtn.disabled = true;
+                startBtn.innerHTML = '<i class="fas fa-play"></i> 开始';
+                
+                // 更新学生名单显示和统计数据
+                updateStudentsGrid();
+                updateStats();
+            });
+            
+            // 初始状态
+            pauseBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>
