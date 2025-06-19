@@ -1,0 +1,11 @@
+{
+  "name": "static-html-site",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node server.js",
+    "build": "echo 'Static site - no build required'"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
