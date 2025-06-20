@@ -3,9 +3,21 @@
   "version": "1.0.0",
   "scripts": {
     "start": "node server.js",
-    "build": "echo 'Static site - no build required'"
+    "build": "npm install --legacy-peer-deps && echo 'Static site - no build required'"
   },
   "dependencies": {
     "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "bats-assert": "^2.0.0",
+    "bats-support": "^0.3.0"
+  },
+  "overrides": {
+    "bats-assert": {
+      "bats-support": "0.3.0"
+    }
+  },
+  "npmConfig": {
+    "legacy-peer-deps": true
   }
 }
